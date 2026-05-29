@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme -->
+    <style name="Theme.DevSidecar" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">#2196F3</item>
+        <item name="colorPrimaryDark">#1976D2</item>
+        <item name="colorAccent">#00E676</item>
+        <item name="android:statusBarColor">#2196F3</item>
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
+
+    <!-- Button styles -->
+    <style name="Widget.DevSidecar.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#4CAF50</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+
+    <style name="Widget.DevSidecar.Button.Danger" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">#F44336</item>
+        <item name="android:textColor">#FFFFFF</item>
+    </style>
+</resources>

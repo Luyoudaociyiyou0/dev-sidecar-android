@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Dev-Sidecar</string>
+    <string name="title">Dev-Sidecar</string>
+    <string name="subtitle">Android MITM Proxy</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_running">Running</string>
+    <string name="btn_start">START PROXY</string>
+    <string name="btn_stop">STOP PROXY</string>
+    <string name="hint_port">Port: 7890</string>
+</resources>

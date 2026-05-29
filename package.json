@@ -1,0 +1,46 @@
+{
+  "name": "dev-sidecar-android",
+  "version": "1.0.0",
+  "description": "Dev-Sidecar for Android/Termux - MITM proxy with DNS-over-HTTPS, upstream proxy support",
+  "main": "src/proxy.js",
+  "bin": {
+    "dev-sidecar-android": "bin/dev-sidecar-android.js",
+    "dsc-android": "bin/dev-sidecar-android.js"
+  },
+  "scripts": {
+    "start": "node src/proxy.js",
+    "test": "node test_mitm.js",
+    "android-setup": "bash android/setup.sh",
+    "build-apk": "bash android/build_apk.sh"
+  },
+  "keywords": [
+    "proxy",
+    "mitm",
+    "dns",
+    "doh",
+    "android",
+    "termux",
+    "dev-sidecar",
+    "https",
+    "sni",
+    "sniffing"
+  ],
+  "author": "DocMirror (rewritten for Termux/Android)",
+  "license": "MPL-2.0",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "lru-cache": "^11.5.1",
+    "node-forge": "^1.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "preferGlobal": true,
+  "files": [
+    "src/",
+    "android/",
+    "package.json",
+    "README.md",
+    "LICENSE"
+  ]
+}

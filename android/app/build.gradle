@@ -1,0 +1,60 @@
+// android/app/build.gradle
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace "com.devsidecar"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.devsidecar"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            minifyEnabled false
+        }
+    }
+
+    // 关键：打包 nodejs-mobile 的 native 库
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+        resources {
+            excludes += [
+                'META-INF/DEPENDENCIES',
+                'META-INF/LICENSE',
+                'META-INF/NOTICE',
+                'META-INF/*.MF',
+                'META-INF/*.SF',
+                'META-INF/*.DSA',
+                'META-INF/*.RSA'
+            ]
+        }
+    }
+
+    sourceSets {
+        main {
+            // nodejs-mobile-android 要求 assets/nodejs 目录存在
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.10.0'
+
+    // nodejs-mobile-android - 在 Android 中嵌入 Node.js
+    // 使用 JitPack 上的 nodejs-mobile-android
+    implementation 'com.github.janeasystems:nodejs-mobile-android:0.9.0'
+}
