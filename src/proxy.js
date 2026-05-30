@@ -452,11 +452,13 @@ function handleHttpRequest (req, res) {
 
 // ─── CLI ────────────────────────────────────────────────────────────────────
 const { program } = require('commander')
+const webui = require('./webui')
 
 function main () {
   program
     .option('--port <n>',  'Proxy listen port', '7890')
     .option('--host <addr>', 'Bind address', '0.0.0.0')
+    .option('--web-port <n>', 'Web UI port', '8080')
     .option('--mitm-disable', 'Disable MITM')
     .option('--upstream <url>', 'Upstream proxy (http://host:port or socks5://host:port)')
     .option('--rules <domains>', 'Comma-separated domains for MITM')
@@ -490,6 +492,7 @@ function main () {
   }
 
   const proxyPort = parseInt(opts.port)
+  const webPort = parseInt(opts.webPort)
   const host = opts.host
 
   const server = http.createServer()
@@ -497,7 +500,17 @@ function main () {
   server.on('connect', handleConnect)
   server.on('error', (e) => log.error('Proxy server error:', e))
 
-  server.listen(proxyPort, host, () => {
+  // Initialize Web UI config
+  webui.setConfig({
+    proxyPort,
+    webPort,
+    mitmEnabled: gMitmEnabled,
+    upstreamProxy: gUpstreamProxy,
+    rules: gRules,
+    certPath: caCertPath
+  })
+
+  server.listen(proxyPort, host, async () => {
     log.info('dev-sidecar-android started!')
     log.info(`  Proxy  : ${host}:${proxyPort}`)
     log.info(`  MITM   : ${gMitmEnabled ? 'ENABLED' : 'disabled'}`)
@@ -506,6 +519,12 @@ function main () {
     log.info('')
     log.info('Configure your browser/device proxy to:')
     log.info(`  HTTP  : ${host === '0.0.0.0' ? '127.0.0.1' : host}:${proxyPort}`)
+    log.info('')
+
+    // Start Web UI
+    webui.setProxyServer(server)
+    await webui.start(webPort)
+    log.info(`  Web UI: http://127.0.0.1:${webPort}`)
     log.info('')
   })
 

@@ -60,7 +60,14 @@ async function runTests() {
   assert(proxyCode.includes('CONNECT'), 'proxy.js 应处理 CONNECT 方法');
   console.log('   ✓ 代理模块语法正确\n');
 
-  // 6. 测试 DoH 解析 (网络测试)
+  // 6. 测试 WebUI 模块导入
+  console.log('6. 测试 WebUI 模块导入...');
+  const webui = require('./src/webui');
+  assert(webui.start, 'webui 应导出 start 方法');
+  assert(webui.HTML_UI, 'webui 应导出 HTML_UI');
+  console.log('   ✓ WebUI 模块导入成功\n');
+
+  // 7. 测试 DoH 解析 (网络测试)
   console.log('6. 测试 DoH 解析...');
   try {
     const ips = await doh.resolve('github.com');
