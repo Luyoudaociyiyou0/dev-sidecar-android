@@ -1,146 +1,84 @@
 package com.devsidecar;
 
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
-import android.widget.Button;
-import android.widget.ScrollView;
-import android.widget.TextView;
-import android.widget.Switch;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.ConsoleMessage;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-
 /**
- * 主 Activity - Dev-Sidecar Android 控制界面
- * 功能：启动/停止 Node.js 代理，显示日志
+ * MainActivity - WebView shell connecting to dev-sidecar proxy web UI
+ * The proxy runs separately (Termux or embedded). This app provides
+ * a convenient UI for controlling it.
  */
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "DevSidecar";
-    private TextView logText;
-    private ScrollView logScroll;
-    private Switch mitmSwitch;
-    private Button startBtn, stopBtn;
-    private boolean isRunning = false;
-    private Process nodeProcess;
-    private Handler handler = new Handler();
-    private StringBuilder logBuffer = new StringBuilder();
+    private static final String DEFAULT_PROXY_URL = "http://127.0.0.1:8080";
+
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
-        logText = findViewById(R.id.log_text);
-        logScroll = findViewById(R.id.log_scroll);
-        mitmSwitch = findViewById(R.id.mitm_switch);
-        startBtn = findViewById(R.id.start_btn);
-        stopBtn = findViewById(R.id.stop_btn);
+        webView = new WebView(this);
+        setContentView(webView);
 
-        startBtn.setOnClickListener(v -> startProxy());
-        stopBtn.setOnClickListener(v -> stopProxy());
+        WebSettings settings = webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        appendLog("Dev-Sidecar Android v1.0.0");
-        appendLog("Node.js proxy bundled in assets/");
-        appendLog("Ready. Click 'Start Proxy' to begin.\n");
-    }
-
-    private void startProxy() {
-        if (isRunning) {
-            appendLog("Proxy already running!");
-            return;
-        }
-
-        appendLog("Starting Node.js proxy...");
-        new Thread(() -> {
-            try {
-                // Extract node binary and proxy.js from assets
-                extractAssets();
-
-                // Start Node.js process
-                String nodePath = getFilesDir() + "/nodejs/node";
-                String proxyPath = getFilesDir() + "/nodejs/proxy.js";
-                String[] cmd = {nodePath, proxyPath, "--port", "7890"};
-                nodeProcess = new ProcessBuilder(cmd)
-                        .directory(getFilesDir() + "/nodejs")
-                        .redirectErrorStream(true)
-                        .start();
-
-                isRunning = true;
-                handler.post(() -> {
-                    startBtn.setEnabled(false);
-                    stopBtn.setEnabled(true);
-                });
-                appendLog("Proxy started on port 7890");
-
-                // Read output
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(nodeProcess.getInputStream()));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    appendLog(line);
-                }
-
-                nodeProcess.waitFor();
-                isRunning = false;
-                appendLog("Proxy stopped (exit code: " + nodeProcess.exitValue() + ")");
-                handler.post(() -> {
-                    startBtn.setEnabled(true);
-                    stopBtn.setEnabled(false);
-                });
-
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to start proxy", e);
-                appendLog("ERROR: " + e.getMessage());
-                isRunning = false;
-                handler.post(() -> {
-                    startBtn.setEnabled(true);
-                    stopBtn.setEnabled(false);
-                });
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String desc, String url) {
+                view.loadData(
+                    "<html><body style='background:#212121;color:#00E676;font-family:monospace;"
+                    + "display:flex;justify-content:center;align-items:center;height:100vh;"
+                    + "flex-direction:column;text-align:center;padding:20px'>"
+                    + "<h2>Dev-Sidecar</h2>"
+                    + "<p>Proxy web UI not reachable.</p>"
+                    + "<p>Make sure the proxy is running:<br>"
+                    + "<code>dsc --port 7890 --web-port 8080</code></p>"
+                    + "<p style='color:#666;font-size:12px'>" + desc + "</p>"
+                    + "<button onclick='location.reload()' style='margin-top:16px;"
+                    + "padding:8px 24px;background:#4CAF50;color:#fff;border:none;"
+                    + "border-radius:4px;font-size:16px;cursor:pointer'>Retry</button>"
+                    + "</body></html>",
+                    "text/html", "UTF-8");
             }
-        }).start();
-    }
-
-    private void stopProxy() {
-        if (!isRunning || nodeProcess == null) {
-            appendLog("Proxy not running.");
-            return;
-        }
-        appendLog("Stopping proxy...");
-        nodeProcess.destroy();
-        // Force kill after 3 seconds
-        handler.postDelayed(() -> {
-            if (isRunning && nodeProcess != null) {
-                nodeProcess.destroyForcibly();
-                appendLog("Proxy force-killed.");
-            }
-        }, 3000);
-    }
-
-    private void extractAssets() throws Exception {
-        // TODO: Extract node binary and proxy.js from assets/
-        // For now, assume they're already extracted
-        appendLog("Extracting assets (TODO: implement)");
-    }
-
-    private void appendLog(String msg) {
-        handler.post(() -> {
-            logBuffer.append(msg).append("\n");
-            if (logBuffer.length() > 5000) {
-                logBuffer.delete(0, logBuffer.length() - 5000);
-            }
-            logText.setText(logBuffer.toString());
-            logScroll.post(() -> logScroll.fullScroll(ScrollView.FOCUS_DOWN));
         });
+
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage msg) {
+                android.util.Log.d(TAG, "[WEB] " + msg.message());
+                return true;
+            }
+        });
+
+        // Load proxy web UI
+        String url = getIntent().getStringExtra("proxy_url");
+        if (url == null) url = DEFAULT_PROXY_URL;
+        webView.loadUrl(url);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
     protected void onDestroy() {
+        webView.destroy();
         super.onDestroy();
-        stopProxy();
     }
 }
