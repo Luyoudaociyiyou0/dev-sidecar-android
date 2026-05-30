@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node src/proxy.js",
-    "test": "node test_mitm.js",
+    "test": "node test_basic.js",
     "android-setup": "bash android/setup.sh",
     "build-apk": "bash android/build_apk.sh"
   },
